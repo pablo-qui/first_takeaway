@@ -9,8 +9,17 @@
 
 library(shiny)
 library(MASS)
+library(plotly)
+library(ggplot2)
 data(crabs)
-c <- tabPanel("1")
+c <- tabPanel("1",
+              fluidPage(
+                  sidebarLayout(
+                      sidebarPanel(h2("hello")),
+                      mainPanel(plotlyOutput("first")))
+                  )#fluidpanel
+            
+              )#tab panel
 d <- tabPanel("2")
 refer <- tabPanel("References",
          p(tags$button(class="btn btn-default", 
@@ -33,7 +42,9 @@ ui <- navbarPage("Shiny App on the Crabs Dataset",
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
+    output$first <- renderPlotly({
+        ggplot(data = crabs,aes(x=CW,y=FL, color = sp))+geom_point()
+    })
     
 }
 
