@@ -1,0 +1,52 @@
+---
+title: "Information of Classes"
+author: "Pablo Quicios"
+date: ""
+output: pdf_document
+params: 
+  data: 'Blood1' 
+  smo: TRUE
+  non: TRUE
+  pro: FALSE
+  over: FALSE
+  obe: TRUE
+---
+## Brief information on the classes chosen 
+
+```{r include=FALSE}
+library(tidyverse)
+library(Stat2Data)
+data(Blood1)
+Smokers <- Blood1 %>% filter(Smoke==1)
+NonSmokers <- Blood1 %>% filter(Smoke==0)
+Fit <- Blood1 %>% filter(Overwt==0)
+Overweight <- Blood1 %>% filter(Overwt==1)
+Obese <- Blood1 %>% filter(Overwt==2)
+```
+
+```{r,echo=F}
+# The `params` object is available in the document.
+if (params$smo){
+  summary(Smokers)[1]
+  }
+```
+<p></p>
+```{r,echo=F}
+if (params$non){summary(NonSmokers)[1]
+  }
+```
+<p></p>
+```{r,echo=F}
+if (params$pro){summary(Fit)[1]
+  }
+```
+<p></p>
+```{r,echo=F}
+if (params$over){summary(Overweight[1])
+  }
+```
+<p></p>
+```{r,echo=F}
+if (params$obe){summary(Obese[1])
+  }
+```
