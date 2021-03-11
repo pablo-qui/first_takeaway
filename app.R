@@ -11,16 +11,42 @@ library(shiny)
 library(MASS)
 library(plotly)
 library(ggplot2)
+library(shinythemes)
 data(crabs)
-c <- tabPanel("1",
-              fluidPage(
-                  sidebarLayout(
-                      sidebarPanel(h2("hello")),
-                      mainPanel(plotlyOutput("first")))
-                  )#fluidpanel
-            
-              )#tab panel
-d <- tabPanel("2")
+
+intro <- tabPanel("Description",
+                  fluidPage(theme = shinytheme("flatly"),
+                    mainPanel(
+                    p("The crabs data frame has 200 rows and 8 columns, describing 5 morphological measurements on
+50 crabs each of two colour forms and both sexes, of the species Leptograpsus variegatus collected
+at Fremantle, W. Australia."),
+br(),
+p("This data frame contains the following columns:"),
+br(),
+p("- sp species: B or O for blue or orange."),
+p("- sex as it says."),
+p("- index index 1:50 within each of the four groups."),
+p("- FL frontal lobe size (mm)."),
+p("- RW rear width (mm)."),
+p("- CL carapace length (mm)."),
+p("- CW carapace width (mm)."),
+p("- BD body depth (mm).")
+                    )#aminpanel
+                  )#fluidpage
+                  )#tabpanel
+
+table <- tabPanel("Table",
+                     )#tabpanel
+plot <- tabPanel("Plots",
+                 sidebarLayout(
+                               sidebarPanel(h2("hello")),
+                               mainPanel(plotlyOutput("first")))
+                 #fluidpanel
+        )#tab panel
+
+reg <- tabPanel("Regression Model",
+                )#tabpanel
+
 refer <- tabPanel("References",
          p(tags$button(class="btn btn-default", 
                        `data-toggle`="collapse", 
@@ -33,8 +59,10 @@ refer <- tabPanel("References",
 
 # Define UI for application that draws a histogram
 ui <- navbarPage("Shiny App on the Crabs Dataset",
-    c,
-    d,
+    intro,
+    table,
+    plot,
+    reg,
     refer
     
     
