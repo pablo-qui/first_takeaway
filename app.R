@@ -14,6 +14,7 @@ library(ggplot2)
 library(shinythemes)
 
 data(crabs)
+colnames(crabs)
 
 intro <- tabPanel("Description",
                   fluidPage(theme = shinytheme("flatly"),
@@ -45,10 +46,25 @@ table <- tabPanel("Table",
         dataTableOutput("table")
         )#fluidpage
         )#tabpanel
+
+
 plot <- tabPanel("Plots",
                  sidebarLayout(
-                               sidebarPanel(h2("hello")),
-                               mainPanel(plotlyOutput("first")))
+                    sidebarPanel(h4("Plot the different variables against each other 
+                                    differenciating between Sex or Species"),
+                      selectInput("varx",
+                        "Variable on X",
+                        c("Frontal Lobe Size", "Rear Width","Carapace Length",
+                        "Carapace Width", "Body Depth")), #select input 
+                      selectInput("vary",
+                                  "Variable on Y",
+                                  c("Frontal Lobe Size", "Rear Width","Carapace Length",
+                                    "Carapace Width", "Body Depth"),
+                                  selected = "Rear Width"),
+                      radioButtons("rb", "Differenciate between Sex or Species",
+                                   c("Sex","Species"))#radiobuttons
+                        ),#side bar panel
+                    mainPanel(plotlyOutput("plot")))
                  #fluidpanel
         )#tab panel
 
@@ -78,14 +94,41 @@ ui <- navbarPage("Shiny App on the Crabs Dataset",
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-    output$first <- renderPlotly({
-        ggplot(data = crabs,aes(x=CW,y=FL, color = sp))+geom_point()
+    
+    selectx <- reactive({
+        switch (input$varx,
+            "Frontal Lobe Size" = crabs$FL,
+            "Rear Width" = crabs$RW,
+            "Carapace Length" = crabs$CL,
+            "Carapace Width" = crabs$CW,
+            "Body Depth" = crabs$BD
+        )
     })
+    selecty <- reactive({
+        switch (input$vary,
+            "Frontal Lobe Size" = crabs$FL,
+            "Rear Width" = crabs$RW,
+            "Carapace Length" = crabs$CL,
+            "Carapace Width" = crabs$CW,
+            "Body Depth" = crabs$BD
+            )
+    })
+    col <- reactive({
+        switch (input$rb,
+            "Sex" = crabs$sex,
+            "Species" = crabs$sp
+        )
+    })
+    
+    output$plot <- renderPlotly({
+        ggplot(data = crabs,aes(x=selectx(),y=selecty(), color=col()))+geom_point()+
+            xlab(input$varx)+ylab(input$vary)+labs(color =input$rb)
+    })
+    
     output$table <- renderDataTable({
         crabs
         if (input$sex!="All"){
            crabs <-  crabs[crabs$sex==input$sex,]
-            
         }
         if (input$sp!="All"){
            crabs <-  crabs[crabs$sp==input$sp,]
