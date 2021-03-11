@@ -12,6 +12,7 @@ library(MASS)
 library(plotly)
 library(ggplot2)
 library(shinythemes)
+
 data(crabs)
 
 intro <- tabPanel("Description",
@@ -24,19 +25,26 @@ br(),
 p("This data frame contains the following columns:"),
 br(),
 p("- sp species: B or O for blue or orange."),
-p("- sex as it says."),
-p("- index index 1:50 within each of the four groups."),
-p("- FL frontal lobe size (mm)."),
-p("- RW rear width (mm)."),
-p("- CL carapace length (mm)."),
-p("- CW carapace width (mm)."),
-p("- BD body depth (mm).")
+p("- sex: M for male, F for female."),
+p("- index: index 1:50 within each of the four groups."),
+p("- FL: frontal lobe size (mm)."),
+p("- RW: rear width (mm)."),
+p("- CL: carapace length (mm)."),
+p("- CW: carapace width (mm)."),
+p("- BD: body depth (mm).")
                     )#aminpanel
                   )#fluidpage
                   )#tabpanel
 
 table <- tabPanel("Table",
-                     )#tabpanel
+        fluidPage(
+        fluidRow(
+            column(6, selectInput("sex","Sex",c("All",levels(crabs$sex)))),
+            column(6,selectInput("sp","Species",c("All",levels(crabs$sp))))
+        ),#fluidRow
+        dataTableOutput("table")
+        )#fluidpage
+        )#tabpanel
 plot <- tabPanel("Plots",
                  sidebarLayout(
                                sidebarPanel(h2("hello")),
@@ -73,7 +81,17 @@ server <- function(input, output) {
     output$first <- renderPlotly({
         ggplot(data = crabs,aes(x=CW,y=FL, color = sp))+geom_point()
     })
-    
+    output$table <- renderDataTable({
+        crabs
+        if (input$sex!="All"){
+           crabs <-  crabs[crabs$sex==input$sex,]
+            
+        }
+        if (input$sp!="All"){
+           crabs <-  crabs[crabs$sp==input$sp,]
+        }
+        crabs
+    })
 }
 
 # Run the application 
