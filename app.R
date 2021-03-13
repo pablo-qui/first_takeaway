@@ -12,9 +12,14 @@ library(MASS)
 library(plotly)
 library(ggplot2)
 library(shinythemes)
+library(tidyverse)
+library(shinyjs)
+library(class)
+library(caret)
 
 data(crabs)
 colnames(crabs)
+
 
 intro <- tabPanel("Description",
                   fluidPage(theme = shinytheme("flatly"),
@@ -49,9 +54,11 @@ table <- tabPanel("Table",
 
 
 plot <- tabPanel("Plots",
-                 sidebarLayout(
+                 sidebarLayout(position = 'right',
                     sidebarPanel(h4("Plot the different variables against each other 
-                                    differenciating between Sex or Species"),
+                                    differenciating between Sex or Species."),
+                                 h5("You can also compare the means for the different variables
+                                    between groups in the table below the graph."),
                       selectInput("varx",
                         "Variable on X",
                         c("Frontal Lobe Size", "Rear Width","Carapace Length",
@@ -64,12 +71,27 @@ plot <- tabPanel("Plots",
                       radioButtons("rb", "Differenciate between Sex or Species",
                                    c("Sex","Species"))#radiobuttons
                         ),#side bar panel
-                    mainPanel(plotlyOutput("plot")))
-                 #fluidpanel
+                    mainPanel(plotlyOutput("plot"),
+                              fluidRow(column(12,offset=2,
+                              tableOutput("table2"))))
+                 )#sidebar layout
         )#tab panel
 
 reg <- tabPanel("Regression Model",
+                sidebarLayout(position = 'right',
+                    sidebarPanel(p("Here, the objective is to run k-nearest neighbours to determine 
+                                   the species of the crab based on the other variables."),
+                        useShinyjs(),
+                        sliderInput("knn","Number of Neighbours",
+                                    min = 1, max=7,step=1, value=1),
+                        checkboxInput("split", label = "Automatical Split Size", value = TRUE),
+                        sliderInput("split2","Select Splitting  ",
+                            min=0.5, max = 0.9, step=0.01, value=0.75),
+                        downloadButton("report", "Generate report")),
+                    mainPanel(h3("Confusion Matrix of the Regression"),verbatimTextOutput("confm"))
+                )#side bar layout
                 )#tabpanel
+
 
 refer <- tabPanel("References",
          p(tags$button(class="btn btn-default", 
@@ -94,6 +116,18 @@ ui <- navbarPage("Shiny App on the Crabs Dataset",
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+    
+    output$table <- renderDataTable({
+        crabs
+        if (input$sex!="All"){
+            crabs <-  crabs%>%filter(sex==input$sex)
+        }
+        if (input$sp!="All"){
+            crabs <-  crabs%>%filter(sp==input$sp)
+        }
+        crabs
+    })
+    
     
     selectx <- reactive({
         switch (input$varx,
@@ -125,16 +159,67 @@ server <- function(input, output) {
             xlab(input$varx)+ylab(input$vary)+labs(color =input$rb)
     })
     
-    output$table <- renderDataTable({
-        crabs
-        if (input$sex!="All"){
-           crabs <-  crabs[crabs$sex==input$sex,]
-        }
-        if (input$sp!="All"){
-           crabs <-  crabs[crabs$sp==input$sp,]
-        }
-        crabs
+    
+    output$table2 <- renderTable({
+        crabs %>% group_by(col()) %>% summarize(mean_FL = mean(FL), mean_RW=mean(RW),
+                                mean_CL=mean(CL), mean_CW=mean(CW), mean_BD=mean(BD))
     })
+    
+    
+    
+    
+    observe(toggle("split2", input$split, anim = TRUE, animType = "slide"))
+    
+    output$confm <- renderPrint({
+        if (!input$split){
+            r <- input$split2
+        } else { r <- 0.75}
+        
+        crabs$sp <- as.numeric(crabs$sp) - 1
+        crabs$sex <- as.numeric(crabs$sex) - 1
+        
+        spl <- floor(r*nrow(crabs))
+        spl <- sample(seq_len(nrow(crabs)), size= spl)
+        
+        XTrain = crabs[spl,-3]
+        XTest = crabs[-spl,-3]
+        knn_pred <- knn(train = scale(XTrain[,-1]), test = scale(XTest[,-1]), cl = XTrain$sp, k=input$knn)
+        levels(knn_pred) <- c("B","0")
+        XTest <- as.factor(XTest$sp)
+        levels(XTest) <- c("B","0")
+        confusionMatrix(knn_pred, XTest)
+    })
+    
+    output$report <- downloadHandler(
+        # For PDF output, change this to "report.pdf"
+        filename = "report.html",
+        content = function(file) {
+            # Copy the report file to a temporary directory before processing it, in
+            # case we don't have write permissions to the current working dir (which
+            # can happen when deployed).
+            tempReport <- file.path(tempdir(), "report.Rmd")
+            file.copy("report.Rmd", tempReport, overwrite = TRUE)
+            
+            # Set up parameters to pass to Rmd document
+            params <- list(
+                n_sample = isolate(input$n_sample), 
+                dist = isolate(input$dist), 
+                breaks = if(!isolate(input$auto_bins)) {isolate(input$n_bins)} else {"Sturges"}
+            )
+            
+            # Knit the document, passing in the `params` list, and eval it in a
+            # child of the global environment (this isolates the code in the document
+            # from the code in this app).
+            rmarkdown::render(tempReport, output_file = file,
+                              params = params,
+                              envir = new.env(parent = globalenv())
+            )
+        }
+    )
+    
+    
+    
+    
 }
 
 # Run the application 
