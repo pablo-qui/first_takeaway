@@ -178,8 +178,7 @@ server <- function(input, output) {
         crabs$sp <- as.numeric(crabs$sp) - 1
         crabs$sex <- as.numeric(crabs$sex) - 1
         
-        spl <- floor(r*nrow(crabs))
-        spl <- sample(seq_len(nrow(crabs)), size= spl)
+        spl = createDataPartition(crabs$sp, p = r, list = FALSE)
         
         XTrain = crabs[spl,-3]
         XTest = crabs[-spl,-3]
@@ -202,9 +201,8 @@ server <- function(input, output) {
             
             # Set up parameters to pass to Rmd document
             params <- list(
-                n_sample = isolate(input$n_sample), 
-                dist = isolate(input$dist), 
-                breaks = if(!isolate(input$auto_bins)) {isolate(input$n_bins)} else {"Sturges"}
+                size_spl = if (!isolate(input$split)){isolate(input$split2)} else {0.75},
+                k = isolate(input$knn)
             )
             
             # Knit the document, passing in the `params` list, and eval it in a

@@ -1,52 +1,40 @@
 ---
-title: "Information of Classes"
+title: "Predictive Model of Species"
 author: "Pablo Quicios"
 date: ""
-output: pdf_document
+output: html_document
 params: 
-  data: 'Blood1' 
-  smo: TRUE
-  non: TRUE
-  pro: FALSE
-  over: FALSE
-  obe: TRUE
+  size_spl: 0.75
+  k: 1
 ---
 ## Brief information on the classes chosen 
 
 ```{r include=FALSE}
-library(tidyverse)
-library(Stat2Data)
-data(Blood1)
-Smokers <- Blood1 %>% filter(Smoke==1)
-NonSmokers <- Blood1 %>% filter(Smoke==0)
-Fit <- Blood1 %>% filter(Overwt==0)
-Overweight <- Blood1 %>% filter(Overwt==1)
-Obese <- Blood1 %>% filter(Overwt==2)
+library(MASS)
+library(caret)
+library(class)
+data(crabs)
 ```
 
-```{r,echo=F}
-# The `params` object is available in the document.
-if (params$smo){
-  summary(Smokers)[1]
-  }
+```{r}
+params$size_spl
+params$k
 ```
-<p></p>
-```{r,echo=F}
-if (params$non){summary(NonSmokers)[1]
-  }
+
+
+
+```{r}
+crabs$sp <- as.numeric(crabs$sp) - 1
+crabs$sex <- as.numeric(crabs$sex) - 1
+        
+spl = createDataPartition(crabs$sp, p = params$size_spl, list = FALSE)
+        
+XTrain = crabs[spl,-3]
+XTest = crabs[-spl,-3]
+knn_pred <- knn(train = scale(XTrain[,-1]), test = scale(XTest[,-1]), cl = XTrain$sp, k=params$k)
+levels(knn_pred) <- c("B","0")
+XTest <- as.factor(XTest$sp)
+levels(XTest) <- c("B","0")
+confusionMatrix(knn_pred, XTest)
 ```
-<p></p>
-```{r,echo=F}
-if (params$pro){summary(Fit)[1]
-  }
-```
-<p></p>
-```{r,echo=F}
-if (params$over){summary(Overweight[1])
-  }
-```
-<p></p>
-```{r,echo=F}
-if (params$obe){summary(Obese[1])
-  }
-```
+
