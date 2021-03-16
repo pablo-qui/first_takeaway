@@ -2,12 +2,12 @@
 title: "Predictive Model of Species"
 author: "Pablo Quicios"
 date: ""
-output: html_document
+output: pdf_document
 params: 
   size_spl: 0.75
   k: 1
 ---
-## Brief information on the classes chosen 
+## KNN regression model for the crab species
 
 ```{r include=FALSE}
 library(MASS)
@@ -31,7 +31,8 @@ spl = createDataPartition(crabs$sp, p = params$size_spl, list = FALSE)
         
 XTrain = crabs[spl,-3]
 XTest = crabs[-spl,-3]
-knn_pred <- knn(train = scale(XTrain[,-1]), test = scale(XTest[,-1]), cl = XTrain$sp, k=params$k)
+knn_pred <- knn(train = scale(XTrain[,-1]), test = scale(XTest[,-1]),
+                cl = XTrain$sp, k=params$k)
 levels(knn_pred) <- c("B","0")
 XTest <- as.factor(XTest$sp)
 levels(XTest) <- c("B","0")
